@@ -129,3 +129,78 @@ impl std::fmt::Display for BaoReference {
         write!(f, "{}", self.raw)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_bao_simple() {
+        let raw = "bao://secret/app/password";
+        let r = BaoReference::from_str(raw).unwrap();
+        assert_eq!(r.mount, "secret");
+        assert_eq!(r.path, "app");
+        assert_eq!(r.field, "password");
+    }
+
+    #[test]
+    fn test_parse_bao_nested_path() {
+        let raw = "bao://secret/app/prod/db/password";
+        let r = BaoReference::from_str(raw).unwrap();
+        assert_eq!(r.mount, "secret");
+        assert_eq!(r.path, "app/prod/db");
+        assert_eq!(r.field, "password");
+    }
+
+    #[test]
+    fn test_parse_bao_too_few_segments() {
+        let raw = "bao://secret/password";
+        let err = BaoReference::from_str(raw);
+        assert!(matches!(err, Err(BaoParseError::InvalidSegments(1))));
+    }
+
+    #[test]
+    fn test_parse_bao_spaces() {
+        let raw = "bao://secret/My%20App/password";
+        let r = BaoReference::from_str(raw).unwrap();
+        assert_eq!(r.mount, "secret");
+        assert_eq!(r.path, "My App");
+        assert_eq!(r.field, "password");
+    }
+
+    #[test]
+    fn test_parse_bao_invalid_scheme() {
+        let raw = "http://secret/app/password";
+        let err = BaoReference::from_str(raw);
+        assert!(matches!(err, Err(BaoParseError::InvalidScheme)));
+    }
+
+    #[test]
+    fn test_parse_bao_empty_path_segment() {
+        let raw = "bao://secret//password";
+        let err = BaoReference::from_str(raw);
+        assert!(matches!(err, Err(BaoParseError::EmptyComponent)));
+    }
+
+    #[test]
+    fn test_parse_bao_empty_field() {
+        let raw = "bao://secret/app/";
+        let err = BaoReference::from_str(raw);
+        assert!(matches!(err, Err(BaoParseError::EmptyComponent)));
+    }
+
+    #[test]
+    fn test_parse_bao_missing_mount() {
+        let raw = "bao:///app/password";
+        let err = BaoReference::from_str(raw);
+        assert!(matches!(err, Err(BaoParseError::MissingMount)));
+    }
+
+    #[test]
+    fn test_display_and_as_str_roundtrip() {
+        let raw = "bao://secret/app/prod/db/password";
+        let r = BaoReference::from_str(raw).unwrap();
+        assert_eq!(r.as_str(), raw);
+        assert_eq!(r.to_string(), raw);
+    }
+}

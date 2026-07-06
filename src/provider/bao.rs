@@ -405,3 +405,43 @@ struct KvV2Response {
 struct KvV2Data {
     data: Option<HashMap<String, serde_json::Value>>,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn token_with_expiry(expiry: Instant) -> BaoToken {
+        BaoToken {
+            client_token: SecretString::new("test-token".into()),
+            expiry,
+        }
+    }
+
+    #[test]
+    fn test_token_not_expired_well_before_leeway() {
+        let token = token_with_expiry(Instant::now() + Duration::from_secs(120));
+        assert!(!token.is_expired());
+    }
+
+    #[test]
+    fn test_token_expired_within_leeway() {
+        // is_expired() treats tokens expiring within the next 60s as expired already,
+        // so renewal happens before the token actually stops working.
+        let token = token_with_expiry(Instant::now() + Duration::from_secs(30));
+        assert!(token.is_expired());
+    }
+
+    #[test]
+    fn test_token_expired_in_the_past() {
+        let token = token_with_expiry(Instant::now() - Duration::from_secs(1));
+        assert!(token.is_expired());
+    }
+
+    #[test]
+    fn test_token_poison_marks_expired() {
+        let mut token = token_with_expiry(Instant::now() + Duration::from_secs(120));
+        assert!(!token.is_expired());
+        token.poison();
+        assert!(token.is_expired());
+    }
+}
