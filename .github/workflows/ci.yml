@@ -81,15 +81,9 @@ jobs:
                   username: ${{ github.actor }}
                   password: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Setup Registries
-              run: |
-                  OWNER="${GITHUB_REPOSITORY_OWNER,,}"
-                  echo "CACHE_REPO=ghcr.io/${OWNER}/locket" >> $GITHUB_ENV
-
             - name: Build images
               working-directory: docker
               env:
-                  CI: true
-                  CACHE_REPO: ${{ env.CACHE_REPO }}
+                  CI: false
               run: |
                   docker buildx bake --allow=fs.read=.. -f docker-bake.hcl --set "*.output=type=cacheonly" release
