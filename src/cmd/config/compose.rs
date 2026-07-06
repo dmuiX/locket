@@ -46,6 +46,25 @@ pub struct UpArgs {
     )]
     pub env: Vec<Secret>,
 
+    /// Inject environment variables without the provider service name prefix.
+    ///
+    /// By default, Docker Compose prefixes injected variables with the provider
+    /// service name (e.g. `LOCKET_DB_PASSWORD` for a service named `locket`).
+    /// When enabled, variables are injected exactly as named, which is useful
+    /// when applications require exact variable names. Avoiding collisions with
+    /// other environment variables is then the user's responsibility.
+    ///
+    /// Requires Docker Compose v5.3.0 or later.
+    #[arg(
+        long,
+        env = "LOCKET_RAW_ENV",
+        num_args = 0..=1,
+        default_missing_value = "true",
+        require_equals = false,
+        default_value_t = false
+    )]
+    pub raw_env: bool,
+
     /// Log level
     #[arg(long, env = "LOCKET_LOG_LEVEL", value_enum, default_value_t = LogLevel::Debug)]
     pub log_level: LogLevel,

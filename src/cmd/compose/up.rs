@@ -23,7 +23,11 @@ pub async fn up(project: String, args: UpArgs) -> Result<(), crate::error::Locke
     let env = manager.resolve().await?;
 
     for (key, value) in env {
-        ComposeMsg::set_env(key.as_ref(), value.expose_secret());
+        if args.raw_env {
+            ComposeMsg::raw_set_env(key.as_ref(), value.expose_secret());
+        } else {
+            ComposeMsg::set_env(key.as_ref(), value.expose_secret());
+        }
         debug!("Injected secret: {}", key.as_ref());
     }
 

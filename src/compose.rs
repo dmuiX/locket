@@ -55,6 +55,7 @@ pub enum MessageType {
     Error,
     Debug,
     SetEnv,
+    RawSetEnv,
 }
 
 #[derive(Serialize)]
@@ -84,6 +85,10 @@ impl ComposeMsg {
 
     pub fn set_env(key: &str, value: &str) {
         Self::emit(MessageType::SetEnv, format!("{}={}", key, value));
+    }
+
+    pub fn raw_set_env(key: &str, value: &str) {
+        Self::emit(MessageType::RawSetEnv, format!("{}={}", key, value));
     }
 }
 
@@ -134,5 +139,34 @@ impl<'a> Visit for MessageVisitor<'a> {
         if field.name() == "message" {
             self.0.push_str(value);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_setenv_wire_format() {
+        let payload = ComposeResponse {
+            msg_type: MessageType::SetEnv,
+            message: "KEY=value".into(),
+        };
+        assert_eq!(
+            serde_json::to_string(&payload).unwrap(),
+            r#"{"type":"setenv","message":"KEY=value"}"#
+        );
+    }
+
+    #[test]
+    fn test_rawsetenv_wire_format() {
+        let payload = ComposeResponse {
+            msg_type: MessageType::RawSetEnv,
+            message: "KEY=value".into(),
+        };
+        assert_eq!(
+            serde_json::to_string(&payload).unwrap(),
+            r#"{"type":"rawsetenv","message":"KEY=value"}"#
+        );
     }
 }

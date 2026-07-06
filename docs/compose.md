@@ -61,6 +61,7 @@ Injects secrets into a Docker Compose service environment with `docker compose u
 | `--infisical-default-path` | `INFISICAL_DEFAULT_PATH` |  | The default path to use when one is not specified |
 | `--infisical-default-secret-type` | `INFISICAL_DEFAULT_SECRET_TYPE` |  | The default secret type to use when one is not specified <br><br> **Choices:**<br>- `shared`<br>- `personal` |
 | `--infisical-max-concurrent` | `INFISICAL_MAX_CONCURRENT` |  | Maximum allowed concurrent requests to Infisical API |
+| `--raw-env` | `LOCKET_RAW_ENV` | `false` | Inject environment variables without the provider service name prefix.<br><br>By default, Docker Compose prefixes injected variables with the provider service name (e.g. `LOCKET_DB_PASSWORD` for a service named `locket`). When enabled, variables are injected exactly as named, which is useful when applications require exact variable names. Avoiding collisions with other environment variables is then the user's responsibility.<br><br>Requires Docker Compose v5.3.0 or later. <br><br> **Choices:**<br>- `true`<br>- `false` |
 | `--log-level` | `LOCKET_LOG_LEVEL` | `debug` | Log level <br><br> **Choices:**<br>- `trace`<br>- `debug`<br>- `info`<br>- `warn`<br>- `error` |
 
 ---
