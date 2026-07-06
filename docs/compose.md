@@ -71,6 +71,7 @@ Injects secrets into a Docker Compose service environment with `docker compose u
 | `--bao-role-id` | `BAO_ROLE_ID` |  | AppRole Role ID |
 | `--bao-secret-id` | `BAO_SECRET_ID` |  | AppRole Secret ID<br><br>Either provide the value directly or via a file with `file:` prefix |
 | `--bao-max-concurrent` | `BAO_MAX_CONCURRENT` |  | Maximum allowed concurrent requests to the OpenBao/Vault API |
+| `--raw-env` | `LOCKET_RAW_ENV` | `false` | Inject environment variables without the provider service name prefix.<br><br>By default, Docker Compose prefixes injected variables with the provider service name (e.g. `LOCKET_DB_PASSWORD` for a service named `locket`). When enabled, variables are injected exactly as named, which is useful when applications require exact variable names. Avoiding collisions with other environment variables is then the user's responsibility.<br><br>Requires Docker Compose v5.3.0 or later. <br><br> **Choices:**<br>- `true`<br>- `false` |
 | `--log-level` | `LOCKET_LOG_LEVEL` | `debug` | Log level <br><br> **Choices:**<br>- `trace`<br>- `debug`<br>- `info`<br>- `warn`<br>- `error` |
 
 ---
