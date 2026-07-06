@@ -23,7 +23,7 @@ Injects secrets into a Docker Compose service environment with `docker compose u
 
 | Command | Env | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `--provider` | `SECRETS_PROVIDER` |  | Secrets provider backend to use <br><br> **Choices:**<br>- `op`: 1Password Service Account<br>- `op-connect`: 1Password Connect Provider<br>- `bws`: Bitwarden Secrets Provider<br>- `infisical`: Infisical Secrets Provider |
+| `--provider` | `SECRETS_PROVIDER` |  | Secrets provider backend to use <br><br> **Choices:**<br>- `op`: 1Password Service Account<br>- `op-connect`: 1Password Connect Provider<br>- `bws`: Bitwarden Secrets Provider<br>- `infisical`: Infisical Secrets Provider<br>- `bao`: OpenBao / HashiCorp Vault Provider |
 | `--env-file` | `LOCKET_ENV_FILE` |  | Files containing environment variables which may contain secret references |
 | `--env` | `LOCKET_ENV` |  | Environment variable overrides which may contain secret references |
 | `<service>` |  |  | Service name from Docker Compose |
@@ -61,6 +61,16 @@ Injects secrets into a Docker Compose service environment with `docker compose u
 | `--infisical-default-path` | `INFISICAL_DEFAULT_PATH` |  | The default path to use when one is not specified |
 | `--infisical-default-secret-type` | `INFISICAL_DEFAULT_SECRET_TYPE` |  | The default secret type to use when one is not specified <br><br> **Choices:**<br>- `shared`<br>- `personal` |
 | `--infisical-max-concurrent` | `INFISICAL_MAX_CONCURRENT` |  | Maximum allowed concurrent requests to Infisical API |
+### OpenBao / Vault Provider
+
+| Command | Env | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `--bao-url` | `BAO_URL` |  | OpenBao / Vault server URL |
+| `--bao-namespace` | `BAO_NAMESPACE` |  | OpenBao / Vault namespace (Enterprise/OpenBao Namespaces feature) |
+| `--bao-auth-mount` | `BAO_AUTH_MOUNT` |  | Auth mount path where the AppRole auth method is enabled |
+| `--bao-role-id` | `BAO_ROLE_ID` |  | AppRole Role ID |
+| `--bao-secret-id` | `BAO_SECRET_ID` |  | AppRole Secret ID<br><br>Either provide the value directly or via a file with `file:` prefix |
+| `--bao-max-concurrent` | `BAO_MAX_CONCURRENT` |  | Maximum allowed concurrent requests to the OpenBao/Vault API |
 | `--log-level` | `LOCKET_LOG_LEVEL` | `debug` | Log level <br><br> **Choices:**<br>- `trace`<br>- `debug`<br>- `info`<br>- `warn`<br>- `error` |
 
 ---
