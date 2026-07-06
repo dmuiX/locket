@@ -37,7 +37,9 @@ jobs:
 
             - name: Setup Registries
               run: |
-                  echo "REGISTRIES=ghcr.io/${{ github.repository_owner }},docker.io/${{ secrets.DOCKERHUB_USERNAME }}" >> $GITHUB_ENV
+                  OWNER="${GITHUB_REPOSITORY_OWNER,,}"
+                  echo "REGISTRIES=ghcr.io/${OWNER}" >> $GITHUB_ENV
+                  echo "CACHE_REPO=ghcr.io/${OWNER}/locket" >> $GITHUB_ENV
 
             - name: Set up QEMU
               uses: docker/setup-qemu-action@v4
@@ -54,27 +56,17 @@ jobs:
                   username: ${{ github.actor }}
                   password: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Login to Docker Hub
-              uses: docker/login-action@v4
-              with:
-                  username: ${{ secrets.DOCKERHUB_USERNAME }}
-                  password: ${{ secrets.DOCKERHUB_TOKEN }}
-
             - name: Build / Push
               working-directory: docker
               env:
                   REGISTRIES: ${{ env.REGISTRIES }}
+                  CACHE_REPO: ${{ env.CACHE_REPO }}
                   PLATFORMS: linux/amd64,linux/arm64
                   CI: true
               run: |
                   docker buildx bake \
                       --allow=fs.read=.. \
                       -f docker-bake.hcl \
-                      release \
+                      bao \
                       --push \
                       --metadata-file metadata.json
-
-            - name: Create and Push Plugin
-              working-directory: docker
-              run: |
-                  ./build-plugin.sh --metadata ./metadata.json --push
