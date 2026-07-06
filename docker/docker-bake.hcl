@@ -109,7 +109,7 @@ target "bao" {
   inherits = ["_common"]
   target = "base"
   args = {
-    FEATURES = "bao,exec"
+    FEATURES = "bao,exec,compose"
     DEFAULT_PROVIDER = "bao"
   }
   tags = tags_for("bao")
