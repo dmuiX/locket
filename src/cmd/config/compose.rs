@@ -55,12 +55,57 @@ pub struct UpArgs {
     pub service: String,
 }
 
+/// Options passed by Docker Compose when tearing down a project.
+///
+/// Docker Compose invokes the provider `down` command with the same
+/// options as `up`, so they must be accepted, but they are unused
+/// because secrets are not persisted.
+#[derive(Args, Debug)]
+pub struct DownArgs {
+    #[arg(trailing_var_arg = true, allow_hyphen_values = true, hide = true)]
+    pub options: Vec<String>,
+}
+
 #[derive(Subcommand, Debug)]
 pub enum ComposeCommand {
     /// Injects secrets into a Docker Compose service environment with `docker compose up`
     Up(Box<UpArgs>),
     /// Handler for Docker Compose `down`, but no-op because secrets are not persisted
-    Down,
+    Down(DownArgs),
     /// Handler for Docker Compose `metadata` command so that docker can query plugin capabilities
     Metadata,
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::cmd::Cli;
+    use clap::Parser;
+
+    /// Docker Compose invokes the provider `down` command with the same
+    /// options as `up`, so they must parse even though `down` ignores them.
+    #[test]
+    fn test_down_accepts_provider_options() {
+        Cli::try_parse_from([
+            "locket",
+            "compose",
+            "--project-name",
+            "demo",
+            "down",
+            "--provider",
+            "bao",
+            "--bao-url",
+            "https://bao.example",
+            "--raw-env=true",
+            "--env",
+            "KEY={{bao://secret/app/key}}",
+            "service",
+        ])
+        .expect("compose down must accept the same options as up");
+    }
+
+    #[test]
+    fn test_down_accepts_no_options() {
+        Cli::try_parse_from(["locket", "compose", "--project-name", "demo", "down"])
+            .expect("compose down must parse without options");
+    }
 }
