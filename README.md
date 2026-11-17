@@ -1,27 +1,64 @@
-# locket
+# locket — OpenBao / Vault integration
 
-> *A secrets management agent. Keeps your secrets safe and out of sight.*
+A contribution fork of [Brian Bradley's locket](https://github.com/bpbradley/locket), a Rust CLI for injecting secrets into application configuration and process environments.
 
-[![Build Status](https://github.com/bpbradley/locket/actions/workflows/ci.yml/badge.svg)](https://github.com/bpbradley/locket/actions)
+**My contribution:** the OpenBao / HashiCorp Vault provider, including Rust implementation, tests, documentation and Docker build integration. [Upstream PR #91](https://github.com/bpbradley/locket/pull/91) was **merged on July 8, 2026**.
+
+[![Upstream Build Status](https://github.com/bpbradley/locket/actions/workflows/ci.yml/badge.svg)](https://github.com/bpbradley/locket/actions)
 [![Crates.io](https://img.shields.io/crates/v/locket.svg)](https://crates.io/crates/locket)
 [![Docker](https://img.shields.io/github/v/release/bpbradley/locket?sort=semver&label=docker&logo=docker)](https://github.com/bpbradley/locket/pkgs/container/locket)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%203.0-blue.svg)](LICENSE)
 
-1. [Overview](#overview)
-1. [Supported Providers](#providers)
-1. [Full Configuration](./docs/CONFIGURATION.md)
-1. [Roadmap](#roadmap)
+[The contribution](#the-contribution) · [Upstream and fork](#upstream-and-fork) · [OpenBao setup](docs/providers/bao.md) · [Usage overview](#overview) · [Configuration reference](docs/CONFIGURATION.md)
+
+## The contribution
+
+The provider connects locket's existing secret-injection modes to **OpenBao's KV v2 and AppRole APIs**, shared with HashiCorp Vault:
+
+- **KV v2 references:** `bao://<mount>/<path>/<field>`, including nested paths and percent-encoded components.
+- **AppRole authentication:** a file-backed Secret ID, cached tokens and lazy reauthentication before expiry.
+- **Bounded retries and concurrency:** retry once after access is denied; group fields from the same secret so each mount/path is fetched once per resolution pass.
+- **Integration:** provider/configuration wiring, Cargo feature flags, provider-specific Docker build targets and documentation.
+- **Regression tests:** reference parsing and token expiry/invalidation behavior.
+
+```mermaid
+flowchart LR
+    References["Templates / environment references"] --> Locket["locket<br/>OpenBao provider"]
+    Locket -->|"AppRole login + KV v2 reads"| Bao["OpenBao / Vault"]
+    Bao --> Locket
+    Locket --> Files["Rendered configuration files"]
+    Locket --> Environment["Application process environment"]
+```
+
+| Start here | Details |
+| --- | --- |
+| [Merged contribution](https://github.com/bpbradley/locket/pull/91) | Upstream review and accepted change set |
+| [Provider implementation](src/provider/bao.rs) | Authentication, token lifecycle, grouped reads and retry handling |
+| [Reference parser](src/provider/references/bao.rs) | Reference syntax, validation and parser tests |
+| [Provider configuration](src/provider/config/bao.rs) | Endpoint, namespace, authentication and concurrency inputs |
+| [OpenBao / Vault guide](docs/providers/bao.md) | Server prerequisites, policy setup, references and usage examples |
+
+Real-service use recorded in the contribution was **OpenBao with Docker Compose provider mode**. Parser/token unit tests do not establish live Vault compatibility or end-to-end coverage of every injection mode.
+
+## Upstream and fork
+
+**locket itself is Brian Bradley's project.** The badges and release-installation links below refer to upstream. For current general-purpose releases and ongoing development, start with [bpbradley/locket](https://github.com/bpbradley/locket).
+
+This fork preserves the contribution workspace and also carries local Compose-provider and image-build changes; it is not a continuously synchronized upstream mirror. Its `raw-env` option and Compose teardown handling should not be assumed to exist in every upstream release. The fork's publish workflow builds the OpenBao image for `linux/amd64` on version tags; the broader upstream distribution is separate.
+
+Before using the provider, supply a running, unsealed OpenBao/Vault instance, a KV v2 mount and an AppRole restricted to the required paths. Keep the Secret ID in protected file custody rather than Compose YAML or Git. See the [provider guide](docs/providers/bao.md) and [configuration reference](docs/CONFIGURATION.md).
 
 ## Overview
-locket is a small CLI tool (also packaged as a tiny rootless and distroless Docker image) designed to orchestrate secrets for dependent applications and services. locket is designed to work with most secrets providers, and it will coordinate the retrieval of secrets and injection of them into dependent services.
+
+locket is a small CLI tool, also distributed as container images, that retrieves secrets from supported providers and injects them into dependent services. The usage reference below describes the original project's delivery modes; select a release and build features that include the provider and mode you need.
 
 locket is a versatile tool and it supports various forms of secrets injection.
 
 1. [Secrets Injection](./docs/inject.md): Materialize secrets from templates into files using `locket inject`
 1. [Container Sidecar](#sidecar-mode): Inject secrets into configuration files stored in a shared, ephemeral tmpfs volume. locket will render files with secret references replaced with actual secrets so that dependent services can use them.
-1. [Provider](#provider-mode): locket can be installed as a Docker CLI plugin, and it will inject secrets directly into the dependent process enviornment before it starts.
-1. [Orchestrator](#orchestration): `locket exec` is able to manage a specified subcommand, injecting secrets into its process environment. It can also watch for changes to environment files, and restart the dependent service automatically.
-1. [Docker Volume Driver](#docker-volume-driver): locket can be installed as a Docker Enginer Plugin. In this mode, locket can be used as a Volume Driver, where secrets are injected directly into tmpfs-backed volumes that can be mounted by dependent containers. This allows the Docker daemon to manage the lifecycle of secrets and their injection directly, without needing a sidecar container.
+1. [Provider](#provider-mode): locket can be installed as a Docker CLI plugin, and it will inject secrets directly into the dependent process environment before it starts.
+1. [Orchestrator](#orchestration): `locket exec` is able to manage a specified subcommand, injecting secrets into its process environment. It can also watch for changes to environment files and restart the dependent service automatically.
+1. [Docker Volume Driver](#docker-volume-driver): locket can be installed as a Docker Engine Plugin. In this mode, locket can be used as a Volume Driver, where secrets are injected directly into tmpfs-backed volumes that can be mounted by dependent containers. This allows the Docker daemon to manage the lifecycle of secrets and their injection directly, without needing a sidecar container.
 
 ## Providers
 
@@ -63,7 +100,8 @@ services:
     # Configurations can be supplied via command like below, or via env variables.
     command:
         - "--provider=op-connect"
-        - "--op-token=file:/run/secrets/op_token"
+        - "--connect-host=https://connect.example.com"
+        - "--connect-token=file:/run/secrets/op_token"
         - "--map=/templates:/run/secrets/locket" # Supports multiple maps, if needed.
         - "--secret=db_pass={{ op://vault/db/pass }}"
         - "--secret=db_host={{ op://vault/db/host }}"
@@ -147,7 +185,7 @@ services:
         provider: op-connect
         connect-token: file:/etc/connect/token
         connect-host: $OP_CONNECT_HOST
-        secrets:
+        env:
           - "secret1={{ op://Mordin/SecretPassword/Test Section/text }}"
           - "secret2={{ op://Mordin/SecretPassword/Test Section/date }}"
   demo:
@@ -163,8 +201,7 @@ services:
 ```
 
 > [!NOTE]
-> The environment variables are injected with the providers service name prefixed.
-> This is behavior managed by Docker directly, and cannot be changed. So in some cases it may be necessary to get creative with the service names to ensure the secrets are namespaced as desired.
+> By default, Docker Compose prefixes injected environment variables with the provider service name. This fork adds an opt-in `raw-env` option for exact variable names, requiring Docker Compose **v5.3.0 or later**. Avoiding name collisions is then your responsibility; see the [Compose reference](docs/compose.md).
 
 In order to use the Provider mode, `locket` must be installed on the host system directly as a Docker CLI plugin. The simplest way to do this is to install the binary directly from GitHub, and symlink it to the appropriate directory for docker to access it as a cli-plugin.
 
