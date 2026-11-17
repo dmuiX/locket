@@ -1,4 +1,4 @@
-# locket — OpenBao / Vault integration
+# 🔐 locket — OpenBao / Vault integration
 
 A contribution fork of [Brian Bradley's locket](https://github.com/bpbradley/locket), a Rust CLI for injecting secrets into application configuration and process environments.
 
@@ -9,9 +9,9 @@ A contribution fork of [Brian Bradley's locket](https://github.com/bpbradley/loc
 [![Docker](https://img.shields.io/github/v/release/bpbradley/locket?sort=semver&label=docker&logo=docker)](https://github.com/bpbradley/locket/pkgs/container/locket)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%203.0-blue.svg)](LICENSE)
 
-[The contribution](#the-contribution) · [Upstream and fork](#upstream-and-fork) · [OpenBao setup](docs/providers/bao.md) · [Usage overview](#overview) · [Configuration reference](docs/CONFIGURATION.md)
+[🔧 The contribution](#-the-contribution) · [🔀 Upstream and fork](#-upstream-and-fork) · [🔐 OpenBao setup](docs/providers/bao.md) · [📖 Usage overview](#-overview) · [📚 Configuration reference](docs/CONFIGURATION.md)
 
-## The contribution
+## 🔧 The contribution
 
 The provider connects locket's existing secret-injection modes to **OpenBao's KV v2 and AppRole APIs**, shared with HashiCorp Vault:
 
@@ -40,7 +40,7 @@ flowchart LR
 
 Real-service use recorded in the contribution was **OpenBao with Docker Compose provider mode**. Parser/token unit tests do not establish live Vault compatibility or end-to-end coverage of every injection mode.
 
-## Upstream and fork
+## 🔀 Upstream and fork
 
 **locket itself is Brian Bradley's project.** The badges and release-installation links below refer to upstream. For current general-purpose releases and ongoing development, start with [bpbradley/locket](https://github.com/bpbradley/locket).
 
@@ -48,19 +48,19 @@ This fork preserves the contribution workspace and also carries local Compose-pr
 
 Before using the provider, supply a running, unsealed OpenBao/Vault instance, a KV v2 mount and an AppRole restricted to the required paths. Keep the Secret ID in protected file custody rather than Compose YAML or Git. See the [provider guide](docs/providers/bao.md) and [configuration reference](docs/CONFIGURATION.md).
 
-## Overview
+## 📖 Overview
 
 locket is a small CLI tool, also distributed as container images, that retrieves secrets from supported providers and injects them into dependent services. The usage reference below describes the original project's delivery modes; select a release and build features that include the provider and mode you need.
 
 locket is a versatile tool and it supports various forms of secrets injection.
 
 1. [Secrets Injection](./docs/inject.md): Materialize secrets from templates into files using `locket inject`
-1. [Container Sidecar](#sidecar-mode): Inject secrets into configuration files stored in a shared, ephemeral tmpfs volume. locket will render files with secret references replaced with actual secrets so that dependent services can use them.
-1. [Provider](#provider-mode): locket can be installed as a Docker CLI plugin, and it will inject secrets directly into the dependent process environment before it starts.
-1. [Orchestrator](#orchestration): `locket exec` is able to manage a specified subcommand, injecting secrets into its process environment. It can also watch for changes to environment files and restart the dependent service automatically.
-1. [Docker Volume Driver](#docker-volume-driver): locket can be installed as a Docker Engine Plugin. In this mode, locket can be used as a Volume Driver, where secrets are injected directly into tmpfs-backed volumes that can be mounted by dependent containers. This allows the Docker daemon to manage the lifecycle of secrets and their injection directly, without needing a sidecar container.
+1. [Container Sidecar](#-sidecar-mode): Inject secrets into configuration files stored in a shared, ephemeral tmpfs volume. locket will render files with secret references replaced with actual secrets so that dependent services can use them.
+1. [Provider](#-provider-mode): locket can be installed as a Docker CLI plugin, and it will inject secrets directly into the dependent process environment before it starts.
+1. [Orchestrator](#-orchestration): `locket exec` is able to manage a specified subcommand, injecting secrets into its process environment. It can also watch for changes to environment files and restart the dependent service automatically.
+1. [Docker Volume Driver](#-docker-volume-driver): locket can be installed as a Docker Engine Plugin. In this mode, locket can be used as a Volume Driver, where secrets are injected directly into tmpfs-backed volumes that can be mounted by dependent containers. This allows the Docker daemon to manage the lifecycle of secrets and their injection directly, without needing a sidecar container.
 
-## Providers
+## 🔑 Providers
 
 1. [1password Connect](./docs/providers/connect.md)
 2. [1password Service Accounts](./docs/providers/op.md)
@@ -71,11 +71,11 @@ locket is a versatile tool and it supports various forms of secrets injection.
 > [!TIP]
 > Each provider has its own docker image for sidecar mode, if a slim version is preferred. The `latest` tag bundles all providers and their respective dependencies. But a provider specific tag like `locket:connect` is only about 4MB and has no extra dependencies besides what is needed for the connect provider.
 
-## Sidecar Mode
+## 🐳 Sidecar Mode
 
 In sidecar mode, locket runs as a separate container alongside your application container. The basic premise is:
 
-1. Move your sensitive data to a dedicated secret manager ([Supported Providers](#providers))
+1. Move your sensitive data to a dedicated secret manager ([Supported Providers](#-providers))
 1. Adjust your config files to carry *secret references* instead of raw sensitive data, which are safe to commit directly to revision control (i.e `{{ op://vault/keys/privatekey?ssh-format=openssh }}`)
 1. Configure locket to use your secrets provider, or just use the docker image tag for your provider.
 1. Mount your templates containing secret references for locket to read, i.e. `./templates:/templates:ro`, and mount an output directory for the secrets to be placed (usually a named tmpfs volume, or some secure location) `secrets-store:/run/secrets/locket`
@@ -168,7 +168,7 @@ volumes:
       o: uid=1000,gid=1000,mode=700
 ```
 
-## Provider mode
+## 🔌 Provider mode
 
  locket can be installed as a docker CLI plugin, and be used as a [Docker Compose provider service](https://docs.docker.com/compose/how-tos/provider-services/). In this mode, locket manages the `compose up` lifecycle. Every time `docker compose up` is called, `locket compose up` is first called by Docker, where locket will take provided secret references and set them as environment variables in the dependent container.
 
@@ -230,7 +230,7 @@ Otherwise, install the prebuilt binary directly for your architecture. The scrip
 1. Symlink locket -> cli-plugins/locket `ln -sf $(which locket) ~/.docker/cli-plugins/docker-locket`
 1. Confirm docker sees it. `docker info | grep locket`
 
-## Orchestration
+## 🚀 Orchestration
 
 Process orchestration is achievable via the `locket exec` command, which allows locket to act as a parent process / supervisor for a specified subcommand. It resolves secrets from your templates or `.env` files and injects them directly into the environment of a subprocess.
 
@@ -279,7 +279,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 >>> 
 ```
 
-## Docker Volume Driver
+## 💾 Docker Volume Driver
 
 locket can run as a managed Docker Engine Plugin. This allows you to offload the lifecycle of secret injection to the Docker Daemon. Volumes created with this driver are `tmpfs` (in-memory) filesystems, ensuring secrets are never written to disk. When a volume is unmounted and no references to it remain, the secrets are automatically removed from memory.
 
@@ -390,7 +390,7 @@ WantedBy=multi-user.target
 
 Refer to [these instructions](#install-prebuilt-binaries) for installing the locket binary on the host.
 
-## Example: Hot-Reloading Traefik configurations with Secrets
+## 🔄 Example: Hot-Reloading Traefik configurations with Secrets
 
 Traefik supports Dynamic Configuration via files, which it watches for changes. By pairing Traefik with locket, you can inject secrets (like Dashboard credentials, TLS certificates, or middleware auth) into your configuration files and have Traefik hot-reload them automatically without a restart.
 
@@ -468,7 +468,7 @@ volumes:
       device: tmpfs
 ```
 
-## Roadmap
+## 🧭 Roadmap
 
 1. **Init system**: `locket init` which could be used as a thin container init system, similar to tini or dumb-init, but with support for secret injection into child process groups. This would allow other developers to transparently wrap their applications with `locket init` in their Docker entrypoint, and gain secret injection capabilities in their applications natively.
 1. **Templating Engine**: Adding attributes to the secret reference which can transform secrets before injection. For example `{{ secret_reference | base64 }}` to encode the secret as base64, or `{{ secret_reference | totp }}` to interpret the secret as a totp code.
